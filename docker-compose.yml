@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  # 1. Le Broker MQTT (Mosquitto)
+  mosquitto:
+    image: eclipse-mosquitto:latest
+    container_name: mosquitto_broker
+    ports:
+      - "1883:1883" # Port MQTT standard
+      - "9001:9001" # Port pour les WebSockets (optionnel)
+    volumes:
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_log:/mosquitto/log
+    networks:
+      - parking_network
+
+  # 2. Le Script Python (Le Traducteur MQTT -> Prometheus)
+  mqtt_exporter:
+    build: ./mqtt_exporter
+    container_name: mqtt_to_prometheus
+    ports:
+      - "8000:8000" # Expose les métriques pour Prometheus
+    depends_on:
+      - mosquitto
+    networks:
+      - parking_network
+
+  # 3. La Base de Données Temporelle (Prometheus)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus_server
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    depends_on:
+      - mqtt_exporter
+    networks:
+      - parking_network
+
+  # 4. Le Dashboard Visualisation (Grafana)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana_dashboard
+    ports:
+      - "3000:3000" # Interface Web de Grafana
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks:
+      - parking_network
+
+networks:
+  parking_network:
+    driver: bridge
+
+volumes:
+  mosquitto_data:
+  mosquitto_log:
+  prometheus_data:
+  grafana_data:

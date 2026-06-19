@@ -1,0 +1,7 @@
+global:
+  scrape_interval: 5s # Prometheus va aller chercher les données toutes les 5 secondes
+
+scrape_configs:
+  - job_name: 'parking_iot_service'
+    static_configs:
+      - targets: ['mqtt_exporter:8000'] # Il cible le conteneur Python sur son port 8000
