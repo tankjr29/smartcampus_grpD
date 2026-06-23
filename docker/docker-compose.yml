@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  # --- COUCHE TRANSPORT : LOCAL (Optionnel pour HiveMQ mais requis pour le barème) ---
+  mosquitto:
+    image: eclipse-mosquitto:latest
+    container_name: mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"      # MQTT
+      - "9001:9001"      # WebSocket
+    volumes:
+      - ./mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - ./mosquitto/config/passwd:/mosquitto/config/passwd
+      - mosquitto-data:/mosquitto/data
+    networks:
+      - iot-network
+
+  # --- COUCHE STOCKAGE : INFLUXDB 2.7 ---
+  influxdb:
+    image: influxdb:2.7
+    container_name: influxdb
+    restart: unless-stopped
+    ports:
+      - "8086:8086"
+    env_file:
+      - ./influxdb/.env
+    volumes:
+      - influxdb-data:/var/lib/influxdb2
+    networks:
+      - iot-network
+
+  # --- COUCHE TRAITEMENT : NODE-RED ---
+  node-red:
+    image: nodered/node-red:latest
+    container_name: node-red
+    restart: unless-stopped
+    ports:
+      - "1880:1880"
+    volumes:
+      - ./nodered:/data    # Correction du slash ici
+    depends_on:
+      - mosquitto
+      - influxdb
+    networks:
+      - iot-network
+
+  # --- COUCHE VISUALISATION : GRAFANA ---
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - influxdb
+    networks:
+      - iot-network
+
+volumes:
+  mosquitto-data:
+  influxdb-data:
+  grafana-data:
+
+networks:
+  iot-network:
+    driver: bridge
