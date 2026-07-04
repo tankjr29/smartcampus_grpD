@@ -114,6 +114,8 @@
   * Routage vers les bases de données correspondantes.
 * **Pipeline de Sécurité Dédié :**
   * Traitement à part des alertes IDS pour archivage immédiat et prioritaire dans InfluxDB.
+* **Diagnostic & Débogage :**
+  * Ajout de 3 nœuds de débogage branchés en parallèle sur les flux clés de données (télémétrie, alertes, IDS) pour le suivi et le diagnostic en temps réel.
 
 ---
 
@@ -128,6 +130,7 @@
 * **Panels Temps Réel :** Niveau de places disponibles avec alertes de couleur.
 * **Historiques :** Évolution temporelle de l'occupation du parking et des conditions météo ($T$ & $H$).
 * **Console IDS :** Table de journalisation des intrusions recensées pour le personnel de sécurité.
+* **Système d'Alertes SMTP :** Notification automatique par e-mail via Gmail configurée lors d'une intrusion ou d'un dépassement de seuil ($T/H$).
 
 ---
 
@@ -135,9 +138,9 @@
 
 * **Fichier unique `docker-compose.yml` :** Gestion et isolation de l'infrastructure logicielle complète.
 * **Services orchestrés :**
-  * **Node-RED** (Traitement ETL)
+  * **Node-RED** (Traitement ETL + Diagnostic via Nœuds de débogage)
   * **InfluxDB 2.7** (Stockage temporel avec auto-initialisation via variables d'environnement)
-  * **Grafana** (Visualisation)
+  * **Grafana** (Visualisation + Configuration SMTP intégrée pour alertes e-mail)
   * **Mosquitto** (Broker local optionnel pré-configuré pour la sécurité)
 * **Persistance des Données :** Volumes Docker nommés pour assurer la sauvegarde des bases de données lors des redémarrages.
 

@@ -281,15 +281,21 @@ Le flux Node-RED agit comme le cœur d'intégration logique (ETL - Extract, Tran
             │
             ▼
    [Switch: Topic Filter]
-      ├── 1. Télémétrie ────────► [JSON Parse] ───────────────────► [InfluxDB Out: parking]
-      ├── 2. Alertes Tech ──────► [JSON Parse] ──► [Function] ────► [InfluxDB Out: alertes]
-      └── 3. Alertes IDS ───────► [JSON Parse] ───────────────────► [InfluxDB Out: alertes_ids]
+      ├── 1. Télémétrie ────────► [JSON Parse] ──┬──► [InfluxDB Out: parking]
+      │                                          └──► [Debug: debug 3 (Télémétrie)]
+      │
+      ├── 2. Alertes Tech ──────► [JSON Parse] ──┬──► [Function: Formatage] ──► [InfluxDB Out: alertes]
+      │                                          └──► [Debug: debug 2 (Alertes brutes)]
+      │
+      └── 3. Alertes IDS ───────► [JSON Parse] ──┬──► [InfluxDB Out: alertes_ids]
+                                                 └──► [Debug: debug 1 (Intrusions)]
 ```
 
 ### A. Composants Clés du Pipeline
 * **Nœud d'écoute MQTT (MQTT In) :** Connecté au broker `broker.hivemq.com` sur le port `8883` avec certificat TLS actif. Il écoute le topic générique `ufhb/grp_D/#`.
-* **Nœud de filtrage (Switch Node) :** Aiguille les payloads reçus selon le topic exact de publication pour appliquer un traitement adapté à chaque catégorie de message.
+* **Nœud de filtrage (Switch Node) :** Aiguillage des messages selon le topic exact de publication pour appliquer un traitement adapté à chaque catégorie de message.
 * **Nœuds d'Analyse (JSON Nodes) :** Analysent et convertissent les chaînes JSON brutes reçues en objets JSON JavaScript exploitables.
+* **Nœuds de Débogage (Debug Nodes) :** Trois nœuds de débogage (`debug 1`, `debug 2`, `debug 3`) sont insérés après le décodage JSON pour permettre l'inspection visuelle et le diagnostic en temps réel des charges utiles de données transitant dans le flux Node-RED.
 * **Nœud de Formatage (Function Node) :** Le nœud *Formatage Alertes Météo* utilise du code Javascript pour typier strictement les variables (conversion explicite en type `Number`) afin d'éviter toute erreur d'indexation dans InfluxDB.
 
 ```javascript
@@ -339,10 +345,15 @@ Le dashboard est structuré en trois volets logiques :
    * **Jauge Dynamique (SingleStat Panel) :** Affiche le nombre actuel de places libres. Les couleurs varient dynamiquement en fonction du niveau d'occupation : Vert ($>4$ places libres) $\rightarrow$ Orange ($1\text{ à }3$ places) $\rightarrow$ Rouge ($0$ place libre, parking plein).
    * **Graphe temporel :** Présente l'historique d'occupation du parking sur 24 heures.
 2. **Surveillance environnementale :**
-   * Courbes superposées de la température ambiante et de l'humidité relative du parking. Des lignes de seuils d'alertes sont visibles ($35^\circ\text{C}$ et $80\%$).
+   * Courbes de température ($^\circ\text{C}$) et d'humidité relative ($\%$) avec seuils visuels d'alerte.
 3. **Console IDS (Sécurité) :**
    * **Tableau d'alertes en temps réel :** Liste de manière chronologique toutes les anomalies signalées par le Edge IDS de l'ESP32. Pour chaque ligne, l'opérateur voit le type d'anomalie, la distance détectée au capteur et le timestamp précis.
    * **Indicateur de sévérité globale :** Compteur quotidien du nombre d'infractions signalées.
+
+### B. Notification par e-mail et alertes SMTP
+Pour garantir une réactivité optimale du personnel d'exploitation et de sécurité du campus, un système de notification automatique par e-mail est intégré dans Grafana. Il utilise le protocole SMTP (via un compte Gmail configuré) pour envoyer des messages d'alerte immédiats dès qu'une condition critique est détectée :
+* Dépassement des seuils environnementaux critiques ($T > 35^\circ\text{C}$ ou $H > 80\%$).
+* Détection d'intrusion ou de forçage de barrière par l'IDS.
 
 ---
 
@@ -355,7 +366,11 @@ L'infrastructure définit 4 conteneurs principaux connectés à un réseau local
 * **Service `mosquitto` :** Couche transport locale configurée avec persistance et authentification.
 * **Service `influxdb` (version 2.7) :** Gère le stockage. Son initialisation (compte administrateur, token, bucket initial) est automatisée via un fichier `.env`.
 * **Service `node-red` :** Gère le traitement ETL. Ses volumes de configuration locaux (`./nodered:/data`) permettent de persister les flux créés.
-* **Service `grafana` :** Fournit l'interface de visualisation pré-connectée au réseau local de la base.
+* **Service `grafana` :** Fournit l'interface de visualisation pré-connectée au réseau local de la base. Il intègre de plus la configuration SMTP à l'aide des variables d'environnement suivantes pour activer les notifications d'alertes par e-mail :
+  * `GF_SMTP_ENABLED=true` : Activation de l'envoi de mails.
+  * `GF_SMTP_HOST=smtp.gmail.com:465` : Utilisation des serveurs de messagerie sécurisés Google (SSL/TLS).
+  * `GF_SMTP_USER` et `GF_SMTP_PASSWORD` : Identifiants sécurisés (mot de passe d'application) pour authentifier l'envoi.
+  * `GF_SMTP_FROM_ADDRESS` et `GF_SMTP_FROM_NAME` : Définition de l'identité de l'expéditeur ("Smart Campus IDS Alert").
 
 ### B. Fichier de Variables d'Environnement d'InfluxDB (`docker/influxdb/.env`)
 Le fichier configure les identifiants initiaux d'InfluxDB pour l'automatisation du déploiement :
@@ -392,7 +407,7 @@ DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=my-super-secret-token-123456
 ### C. Perspectives d'Évolution du Système
 1. **Sécurisation Réseau Globale :** Implémentation du chiffrement SSL/TLS entre l'ESP32 physique et le broker MQTT, combinée à une authentification forte par jeton d'accès ou certificat client.
 2. **Observabilité enrichie par Caméra IP :** Ajout d'un flux vidéo à l'entrée avec un algorithme de reconnaissance automatique des plaques d'immatriculation (ALPR).
-3. **Notifications push :** Intégration de passerelles Telegram ou WhatsApp dans le flux Node-RED pour alerter en temps réel l'équipe de sécurité du campus sur leur smartphone.
+3. **Notifications push mobiles et SMS :** Intégration complémentaire de passerelles Telegram ou WhatsApp dans le flux Node-RED pour alerter instantanément sur mobile en plus de la messagerie SMTP Grafana déjà opérationnelle.
 
 ---
 

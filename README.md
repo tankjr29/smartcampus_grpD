@@ -230,7 +230,8 @@ Le flux configuré dans Node-RED implémente une logique de routage robuste :
 2. **Filtrage (Switch Node) :** Aiguillage des messages selon le sous-topic spécifique.
 3. **Analyse JSON (JSON Node) :** Conversion du payload de chaîne de caractères en objet JavaScript.
 4. **Calculs & Formatage (Function Node) :** Restructuration des payloads, typage strict des données pour assurer l'indexation correcte.
-5. **Routage Temporel :** Injection des données dans la base InfluxDB locale (Organisation : `ufhb`, Bucket : `smartcampus`) sous trois mesures distinctes :
+5. **Diagnostic & Débogage (Debug Nodes) :** Intégration de 3 nœuds de débogage branchés en parallèle sur les flux clés de données (télémétrie parking, alertes et alertes IDS) pour faciliter le suivi et le diagnostic en temps réel.
+6. **Routage Temporel :** Injection des données dans la base InfluxDB locale (Organisation : `ufhb`, Bucket : `smartcampus`) sous trois mesures distinctes :
    * `parking` (places libres, occupation, statut).
    * `alertes` (notifications environnementales et techniques).
    * `alertes_ids` (intrusions et tentatives de forçage).
@@ -248,6 +249,9 @@ Le Dashboard Grafana est structuré en trois zones fonctionnelles clés :
 3. **Console IDS (Sécurité physique) :**
    * Tableau récapitulatif des alarmes (Type de fraude, distance d'interception détectée par le capteur et timestamp précis).
    * Jauge du nombre total d'anomalies détectées par jour.
+
+> [!TIP]  
+> **Alertes E-mail (SMTP) :** Grafana est désormais configuré pour envoyer des alertes e-mail automatiques via un serveur SMTP (Gmail) configuré dans les variables d'environnement du service dans `docker-compose.yml`. Cela permet de notifier instantanément les administrateurs en cas de détection d'intrusion par l'IDS ou de dépassement des seuils de température et d'humidité.
 
 ---
 

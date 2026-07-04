@@ -147,8 +147,7 @@
         "y": 140,
         "wires": [
             [
-                "influx-capteurs",
-                "d66f3d75a5244ca7"
+                "influx-capteurs"
             ]
         ]
     },
@@ -164,8 +163,7 @@
         "y": 220,
         "wires": [
             [
-                "format-alertes",
-                "b115b72d36e4315f"
+                "format-alertes"
             ]
         ]
     },
@@ -181,8 +179,7 @@
         "y": 300,
         "wires": [
             [
-                "influx-ids",
-                "6e632d5d28f123f0"
+                "influx-ids"
             ]
         ]
     },
@@ -258,54 +255,6 @@
         "bucket": "smartcampus",
         "x": 660,
         "y": 300,
-        "wires": []
-    },
-    {
-        "id": "d66f3d75a5244ca7",
-        "type": "debug",
-        "z": "5cd1432007dc162c",
-        "name": "debug 1",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 640,
-        "y": 60,
-        "wires": []
-    },
-    {
-        "id": "b115b72d36e4315f",
-        "type": "debug",
-        "z": "5cd1432007dc162c",
-        "name": "debug 2",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 960,
-        "y": 180,
-        "wires": []
-    },
-    {
-        "id": "6e632d5d28f123f0",
-        "type": "debug",
-        "z": "5cd1432007dc162c",
-        "name": "debug 3",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 520,
-        "y": 400,
         "wires": []
     }
 ]

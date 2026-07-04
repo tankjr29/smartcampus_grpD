@@ -147,7 +147,8 @@
         "y": 140,
         "wires": [
             [
-                "influx-capteurs"
+                "influx-capteurs",
+                "a173507038bf8e89"
             ]
         ]
     },
@@ -163,7 +164,8 @@
         "y": 220,
         "wires": [
             [
-                "format-alertes"
+                "format-alertes",
+                "6feb06ab0668bd0c"
             ]
         ]
     },
@@ -175,11 +177,12 @@
         "property": "payload",
         "action": "obj",
         "pretty": false,
-        "x": 430,
-        "y": 300,
+        "x": 350,
+        "y": 360,
         "wires": [
             [
-                "influx-ids"
+                "influx-ids",
+                "2fbc8d476ac024b7"
             ]
         ]
     },
@@ -195,8 +198,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 910,
-        "y": 260,
+        "x": 810,
+        "y": 280,
         "wires": [
             [
                 "influx-alertes"
@@ -253,8 +256,56 @@
         "retentionPolicyV18Flux": "",
         "org": "ufhb",
         "bucket": "smartcampus",
-        "x": 660,
+        "x": 500,
         "y": 300,
+        "wires": []
+    },
+    {
+        "id": "2fbc8d476ac024b7",
+        "type": "debug",
+        "z": "5cd1432007dc162c",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 480,
+        "y": 420,
+        "wires": []
+    },
+    {
+        "id": "6feb06ab0668bd0c",
+        "type": "debug",
+        "z": "5cd1432007dc162c",
+        "name": "debug 2",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 840,
+        "y": 200,
+        "wires": []
+    },
+    {
+        "id": "a173507038bf8e89",
+        "type": "debug",
+        "z": "5cd1432007dc162c",
+        "name": "debug 3",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 720,
+        "y": 60,
         "wires": []
     }
 ]
