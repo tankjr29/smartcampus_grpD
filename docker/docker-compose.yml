@@ -58,7 +58,7 @@ services:
       - GF_SMTP_ENABLED=true
       - GF_SMTP_HOST=smtp.gmail.com:465
       - GF_SMTP_USER=junioragbenonzan31@gmail.com
-      - GF_SMTP_PASSWORD=swdwcfjeznplvpoa  # 🔑 Ton mot de passe d'application Google ici
+      - GF_SMTP_PASSWORD=xxxxxxxxxxxxxxxx # 🔑 Ton mot de passe d'application Google ici
       - GF_SMTP_FROM_ADDRESS=junioragbenonzan31@gmail.com
       - GF_SMTP_FROM_NAME=Smart Campus IDS Alert
     volumes:
