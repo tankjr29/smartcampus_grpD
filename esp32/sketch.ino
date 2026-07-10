@@ -20,6 +20,8 @@
 #define PIN_SERVO_E     13
 #define PIN_SERVO_S     14
 #define PIN_DHT         15
+#define PIN_PIR_ENTREE  27
+#define PIN_PIR_SORTIE  26
 
 #define DHTTYPE DHT22
 
@@ -44,7 +46,6 @@ const int mqtt_port = 8883;
 const int PLACES_MAX = 10;
 const int DISTANCE_SEUIL = 150;
 const unsigned long INTERVALLE_ENVOI = 5000;
-const unsigned long TEMPS_OUVERTURE = 3000;
 
 // ============================================================
 // ===== OBJETS ===============================================
@@ -64,8 +65,6 @@ bool voitureDevantEntree = false;
 bool voitureDevantSortie = false;
 bool barriereEntreeOuverte = false;
 bool barriereSortieOuverte = false;
-unsigned long tempsFermetureEntree = 0;
-unsigned long tempsFermetureSortie = 0;
 unsigned long dernierEnvoiPeriodique = 0;
 unsigned long dernierAffichageLCD = 0;
 
@@ -124,7 +123,6 @@ void envoyerAlerteImmediate(const char* type, const char* message) {
   doc["places_libres"] = placesLibres;
   doc["timestamp"] = millis();
   
-  // Ajoute les valeurs actuelles
   float temp = dht.readTemperature();
   float hum = dht.readHumidity();
   if (!isnan(temp)) doc["temperature"] = round(temp * 10) / 10.0;
@@ -132,7 +130,6 @@ void envoyerAlerteImmediate(const char* type, const char* message) {
 
   char buffer[256];
   serializeJson(doc, buffer);
-  
   Serial.print("🚨 ALERTE MÉTÉO: ");
   Serial.println(buffer);
   client.publish(TOPIC_ALERTES, buffer);
@@ -188,7 +185,7 @@ void reconnecterMQTT() {
 // ============================================================
 void setup() {
   Serial.begin(115200);
-  delay(2000);   // Important pour Wokwi
+  delay(2000);
 
   Serial.println("\n========================================");
   Serial.println("🚗 SMARTCAMPUS CI - PARKING");
@@ -202,6 +199,8 @@ void setup() {
   pinMode(PIN_LED_VERTE, OUTPUT);
   pinMode(PIN_LED_ROUGE, OUTPUT);
   pinMode(PIN_BUZZER, OUTPUT);
+  pinMode(PIN_PIR_ENTREE, INPUT);
+  pinMode(PIN_PIR_SORTIE, INPUT);
 
   digitalWrite(PIN_LED_VERTE, HIGH);
   digitalWrite(PIN_LED_ROUGE, LOW);
@@ -220,20 +219,14 @@ void setup() {
   lcd.backlight();
   lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print(" SMARTCAMPUS CI ");
+  lcd.print("Places: 10");
   lcd.setCursor(0, 1);
-  lcd.print("  PARKING IOT   ");
+  lcd.print("Disponible");
 
   setup_wifi();
   espClientSec.setInsecure();
   client.setServer(mqtt_server, mqtt_port);
   reconnecterMQTT();
-
-  lcd.clear();
-  lcd.setCursor(0, 0);
-  lcd.print("Places: 10");
-  lcd.setCursor(0, 1);
-  lcd.print("Disponible");
 
   Serial.println("✅ Système prêt !");
 }
@@ -251,6 +244,13 @@ void loop() {
   
   float distanceEntree = lireDistanceCM(PIN_TRIG_ENTREE, PIN_ECHO_ENTREE);
   float distanceSortie = lireDistanceCM(PIN_TRIG_SORTIE, PIN_ECHO_SORTIE);
+
+  // === PIR ===
+  bool mouvementEntree = digitalRead(PIN_PIR_ENTREE);
+  bool mouvementSortie = digitalRead(PIN_PIR_SORTIE);
+
+  if (mouvementEntree) Serial.println("🔍 Mouvement PIR ENTRÉE");
+  if (mouvementSortie) Serial.println("🔍 Mouvement PIR SORTIE");
 
   // === GESTION ENTRÉE ===
   if (distanceEntree < DISTANCE_SEUIL && !voitureDevantEntree) {
@@ -273,7 +273,6 @@ void loop() {
       
       barriereEntree.write(90);
       barriereEntreeOuverte = true;
-      tempsFermetureEntree = maintenant + TEMPS_OUVERTURE;
       
       envoyerEvenement("entree_vehicule");
     } else {
@@ -288,6 +287,13 @@ void loop() {
       envoyerAlerteImmediate("FRAUDE_ENTREE", "Parking plein");
     }
   }
+
+  if (barriereEntreeOuverte && distanceEntree >= DISTANCE_SEUIL) {
+    barriereEntree.write(0);
+    barriereEntreeOuverte = false;
+    Serial.println("🔒 Barrière entrée fermée (voiture passée)");
+  }
+
   if (distanceEntree >= DISTANCE_SEUIL) voitureDevantEntree = false;
 
   // === GESTION SORTIE ===
@@ -311,28 +317,22 @@ void loop() {
       
       barriereSortie.write(90);
       barriereSortieOuverte = true;
-      tempsFermetureSortie = maintenant + TEMPS_OUVERTURE;
       
       envoyerEvenement("sortie_vehicule");
     } else {
       envoyerAlerteIDS("Anomalie sortie", distanceSortie);
     }
   }
-  if (distanceSortie >= DISTANCE_SEUIL) voitureDevantSortie = false;
 
-  // Fermeture barrières
-  if (barriereEntreeOuverte && maintenant > tempsFermetureEntree) {
-    barriereEntree.write(0);
-    barriereEntreeOuverte = false;
-    Serial.println("🔒 Barrière entrée fermée");
-  }
-  if (barriereSortieOuverte && maintenant > tempsFermetureSortie) {
+  if (barriereSortieOuverte && distanceSortie >= DISTANCE_SEUIL) {
     barriereSortie.write(0);
     barriereSortieOuverte = false;
-    Serial.println("🔒 Barrière sortie fermée");
+    Serial.println("🔒 Barrière sortie fermée (voiture passée)");
   }
 
-  // === ENVOI PÉRIODIQUE & DETECTION SEUILS ENVIRONNEMENTAUX ===
+  if (distanceSortie >= DISTANCE_SEUIL) voitureDevantSortie = false;
+
+  // === ENVOI PÉRIODIQUE ===
   if (maintenant - dernierEnvoiPeriodique >= INTERVALLE_ENVOI) {
     dernierEnvoiPeriodique = maintenant;
     float temp = dht.readTemperature();
@@ -340,12 +340,34 @@ void loop() {
     
     envoyerDonneesPeriodiques(temp, hum);
 
-    // 💡 Déclenchement des alertes météo en cas de dépassement des seuils
     if (!isnan(temp) && temp > 35.0) {
       envoyerAlerteImmediate("TEMP_ELEVEE", "Temperature critique > 35C");
     }
     if (!isnan(hum) && hum > 80.0) {
       envoyerAlerteImmediate("HUMIDITE_ELEVEE", "Humidite critique > 80%");
+    }
+  }
+
+  // === AFFICHAGE LCD ===
+  if (maintenant - dernierAffichageLCD >= 1000) {
+    dernierAffichageLCD = maintenant;
+    
+    if (!barriereEntreeOuverte && !barriereSortieOuverte) {
+      lcd.setCursor(0, 0);
+      lcd.print("Places: ");
+      lcd.print(placesLibres);
+      lcd.print("   ");
+      
+      lcd.setCursor(0, 1);
+      if (placesLibres == 0) {
+        lcd.print("PARKING PLEIN  ");
+        digitalWrite(PIN_LED_ROUGE, HIGH);
+        digitalWrite(PIN_LED_VERTE, LOW);
+      } else {
+        lcd.print("Disponible     ");
+        digitalWrite(PIN_LED_VERTE, HIGH);
+        digitalWrite(PIN_LED_ROUGE, LOW);
+      }
     }
   }
 

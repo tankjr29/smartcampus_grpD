@@ -125,7 +125,8 @@
         "y": 200,
         "wires": [
             [
-                "parse-capteurs"
+                "parse-capteurs",
+                "6b32e9b3e0f1e90c"
             ],
             [
                 "parse-alertes"
@@ -147,8 +148,7 @@
         "y": 140,
         "wires": [
             [
-                "influx-capteurs",
-                "a173507038bf8e89"
+                "influx-capteurs"
             ]
         ]
     },
@@ -164,8 +164,7 @@
         "y": 220,
         "wires": [
             [
-                "format-alertes",
-                "6feb06ab0668bd0c"
+                "format-alertes"
             ]
         ]
     },
@@ -181,8 +180,7 @@
         "y": 360,
         "wires": [
             [
-                "influx-ids",
-                "2fbc8d476ac024b7"
+                "influx-ids"
             ]
         ]
     },
@@ -261,7 +259,62 @@
         "wires": []
     },
     {
-        "id": "2fbc8d476ac024b7",
+        "id": "6b32e9b3e0f1e90c",
+        "type": "json",
+        "z": "5cd1432007dc162c",
+        "name": "Analyse JSON PIR",
+        "property": "payload",
+        "action": "obj",
+        "pretty": false,
+        "x": 550,
+        "y": 80,
+        "wires": [
+            [
+                "b070f2f6b0cdb49a"
+            ]
+        ]
+    },
+    {
+        "id": "b070f2f6b0cdb49a",
+        "type": "function",
+        "z": "5cd1432007dc162c",
+        "name": "Formatage",
+        "func": "// 1. On extrait la valeur du mouvement (on met 0 par défaut si le PIR n'a rien détecté)\nlet mouvement = msg.payload.mouvement !== undefined ? msg.payload.mouvement : 0;\n\n// 2. On formate le payload pour le nœud InfluxDB - PIR\nmsg.payload = {\n    mouvement_detecte: mouvement,\n    timestamp_esp: msg.payload.timestamp\n};\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 870,
+        "y": 80,
+        "wires": [
+            [
+                "9c72f74bb9780dce",
+                "878dc5508b5bf14c"
+            ]
+        ]
+    },
+    {
+        "id": "9c72f74bb9780dce",
+        "type": "influxdb out",
+        "z": "5cd1432007dc162c",
+        "influxdb": "a92d185a2550c9be",
+        "name": "InfluxDB - PIR",
+        "measurement": "mouvement_pir",
+        "precision": "",
+        "retentionPolicy": "",
+        "database": "database",
+        "precisionV18FluxV20": "ms",
+        "retentionPolicyV18Flux": "",
+        "org": "ufhb",
+        "bucket": "smartcampus",
+        "x": 1120,
+        "y": 80,
+        "wires": []
+    },
+    {
+        "id": "878dc5508b5bf14c",
         "type": "debug",
         "z": "5cd1432007dc162c",
         "name": "debug 1",
@@ -272,40 +325,8 @@
         "complete": "false",
         "statusVal": "",
         "statusType": "auto",
-        "x": 480,
-        "y": 420,
-        "wires": []
-    },
-    {
-        "id": "6feb06ab0668bd0c",
-        "type": "debug",
-        "z": "5cd1432007dc162c",
-        "name": "debug 2",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 840,
-        "y": 200,
-        "wires": []
-    },
-    {
-        "id": "a173507038bf8e89",
-        "type": "debug",
-        "z": "5cd1432007dc162c",
-        "name": "debug 3",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 720,
-        "y": 60,
+        "x": 780,
+        "y": 40,
         "wires": []
     }
 ]

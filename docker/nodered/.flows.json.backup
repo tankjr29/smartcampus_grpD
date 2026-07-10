@@ -125,7 +125,8 @@
         "y": 200,
         "wires": [
             [
-                "parse-capteurs"
+                "parse-capteurs",
+                "6b32e9b3e0f1e90c"
             ],
             [
                 "parse-alertes"
@@ -175,8 +176,8 @@
         "property": "payload",
         "action": "obj",
         "pretty": false,
-        "x": 430,
-        "y": 300,
+        "x": 350,
+        "y": 360,
         "wires": [
             [
                 "influx-ids"
@@ -195,8 +196,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 910,
-        "y": 260,
+        "x": 810,
+        "y": 280,
         "wires": [
             [
                 "influx-alertes"
@@ -253,8 +254,79 @@
         "retentionPolicyV18Flux": "",
         "org": "ufhb",
         "bucket": "smartcampus",
-        "x": 660,
+        "x": 500,
         "y": 300,
+        "wires": []
+    },
+    {
+        "id": "6b32e9b3e0f1e90c",
+        "type": "json",
+        "z": "5cd1432007dc162c",
+        "name": "Analyse JSON PIR",
+        "property": "payload",
+        "action": "obj",
+        "pretty": false,
+        "x": 550,
+        "y": 80,
+        "wires": [
+            [
+                "b070f2f6b0cdb49a",
+                "878dc5508b5bf14c"
+            ]
+        ]
+    },
+    {
+        "id": "b070f2f6b0cdb49a",
+        "type": "function",
+        "z": "5cd1432007dc162c",
+        "name": "Formatage",
+        "func": "msg.payload = {\n    mouvement: msg.payload.mouvement || 0,\n    timestamp: msg.payload.timestamp || Date.now()\n};\n\nmsg.topic = \"mouvement_pir\";   // Measurement InfluxDB\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 870,
+        "y": 80,
+        "wires": [
+            [
+                "9c72f74bb9780dce"
+            ]
+        ]
+    },
+    {
+        "id": "9c72f74bb9780dce",
+        "type": "influxdb out",
+        "z": "5cd1432007dc162c",
+        "influxdb": "a92d185a2550c9be",
+        "name": "InfluxDB - PIR",
+        "measurement": "mouvement_pir",
+        "precision": "",
+        "retentionPolicy": "",
+        "database": "database",
+        "precisionV18FluxV20": "ms",
+        "retentionPolicyV18Flux": "",
+        "org": "ufhb",
+        "bucket": "smartcampus",
+        "x": 1120,
+        "y": 80,
+        "wires": []
+    },
+    {
+        "id": "878dc5508b5bf14c",
+        "type": "debug",
+        "z": "5cd1432007dc162c",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 780,
+        "y": 40,
         "wires": []
     }
 ]
