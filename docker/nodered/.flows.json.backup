@@ -270,8 +270,7 @@
         "y": 80,
         "wires": [
             [
-                "b070f2f6b0cdb49a",
-                "878dc5508b5bf14c"
+                "b070f2f6b0cdb49a"
             ]
         ]
     },
@@ -280,7 +279,7 @@
         "type": "function",
         "z": "5cd1432007dc162c",
         "name": "Formatage",
-        "func": "msg.payload = {\n    mouvement: msg.payload.mouvement || 0,\n    timestamp: msg.payload.timestamp || Date.now()\n};\n\nmsg.topic = \"mouvement_pir\";   // Measurement InfluxDB\nreturn msg;",
+        "func": "// 1. On extrait la valeur du mouvement (on met 0 par défaut si le PIR n'a rien détecté)\nlet mouvement = msg.payload.mouvement !== undefined ? msg.payload.mouvement : 0;\n\n// 2. On formate le payload pour le nœud InfluxDB - PIR\nmsg.payload = {\n    mouvement_detecte: mouvement,\n    timestamp_esp: msg.payload.timestamp\n};\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -291,7 +290,8 @@
         "y": 80,
         "wires": [
             [
-                "9c72f74bb9780dce"
+                "9c72f74bb9780dce",
+                "878dc5508b5bf14c"
             ]
         ]
     },
